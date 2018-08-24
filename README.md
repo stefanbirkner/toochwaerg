@@ -36,3 +36,20 @@ Each line contains the date and the amount of time you spent. Days without an
 entry that contain neither the word "lunch" nor the word "pause" have a marker
 "no pause" at the end of the line. This should help you to find days where you
 missed to add your pause to the log.
+
+### Calculate overtime
+
+Execute the script
+
+    javac WorkingHours.java MissingHours.java; \
+    jrnl -from year \
+      | java -cp . WorkingHours \
+      | java -cp . MissingHours
+
+You get an output like this
+
+    PT1H10M
+
+The script implies a working day of 7 hours. It considers each day with data as
+a working day. This makes it easy to handle sick days and holidays because they
+are simply ignored by the calculator.
