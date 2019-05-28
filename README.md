@@ -51,5 +51,5 @@ You get an output like this
     PT1H10M
 
 The script implies a working day of 7 hours. It considers each day with data as
-a working day. This makes it easy to handle sick days and holidays because they
-are simply ignored by the calculator.
+a working day except for Saturday and Sunday. This makes it easy to handle sick
+days and holidays because they are simply ignored by the calculator.

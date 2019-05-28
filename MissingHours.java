@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.function.ToIntFunction;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.time.DayOfWeek.*;
 
 public class MissingHours {
 
@@ -25,10 +26,26 @@ public class MissingHours {
     private static int diffMinutes(
         String line
     ) {
-        var time = line.split(" ")[1];
+        var words = line.split(" ");
+        var date = words[0];
+        var time = words[1];
         var parts = time.split(":");
         var hours = Integer.parseInt(parts[0]);
         var minutes = Integer.parseInt(parts[1]);
-        return hours * 60 + minutes - 7 * 60;
+        return hours * 60 + minutes - requiredMinutes(date);
+    }
+
+    private static int requiredMinutes(
+        String date
+    ) {
+        return isWeekend(date) ? 0 : 7 * 60;
+    }
+
+    private static boolean isWeekend(
+        String dateAsString
+    ) {
+        var date = LocalDate.parse(dateAsString);
+        var dayOfWeek = date.getDayOfWeek();
+        return dayOfWeek == SATURDAY || dayOfWeek == SUNDAY;
     }
 }
