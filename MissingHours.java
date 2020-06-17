@@ -1,8 +1,5 @@
 import java.io.*;
-import java.nio.charset.*;
 import java.time.*;
-import java.util.*;
-import java.util.function.ToIntFunction;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.DayOfWeek.*;
