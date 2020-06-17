@@ -30,7 +30,7 @@ public class WorkingHours {
         String line
     ) {
         return Pattern.matches(
-            "(\\d{4}-\\d{2}-\\d{2}) (\\d{2}:\\d{2}) (.*)",
+            "\\[(\\d{4}-\\d{2}-\\d{2}) (\\d{2}:\\d{2})\\] (.*)",
             line
         );
     }
@@ -40,7 +40,7 @@ public class WorkingHours {
         Map<String, List<String>> map
     ) {
         var parts = splitOnFirstWhitespace(line);
-        var date = parts[0];
+        var date = parts[0].substring(1);
         var topics = map.computeIfAbsent(
             date,
             (key) -> new ArrayList<String>()
@@ -60,7 +60,8 @@ public class WorkingHours {
         for (var topic: topics) {
             var parts = splitOnFirstWhitespace(topic);
             var action = parts[1].toLowerCase();
-            var time = LocalTime.parse(parts[0]);
+            var time = LocalTime.parse(
+                removeLastChar(parts[0]));
             if (active) {
                 var pause = action.startsWith("lunch") || action.startsWith("pause");
                 withPause |= pause;
@@ -92,5 +93,11 @@ public class WorkingHours {
             text.substring(0, indexWhitespace),
             text.substring(indexWhitespace + 1)
         };
+    }
+
+    private static String removeLastChar(String text) {
+        return text.substring(
+            0,
+            text.length() - 1);
     }
 }
