@@ -6,18 +6,20 @@ import java.util.regex.Pattern;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.LocalTime.now;
 import static java.time.temporal.ChronoUnit.MINUTES;
+import static java.util.Comparator.comparing;
 
 public class WorkingHours {
     public static void main(
         String... args
     ) throws Exception {
-        var byDate = new TreeMap<String, List<String>>();
+        var byDate = new TreeMap<String, List<JournalEntry>>();
         try (
             var reader = new InputStreamReader(System.in, UTF_8);
         ) {
             new BufferedReader(reader)
                 .lines()
                 .filter(WorkingHours::isTopicLine)
+                .map(JournalEntry::parse)
                 .forEach(line -> collect(line, byDate));
         }
         byDate.entrySet()
@@ -35,42 +37,37 @@ public class WorkingHours {
     }
 
     private static void collect(
-        String line,
-        Map<String, List<String>> map
+        JournalEntry entry,
+        Map<String, List<JournalEntry>> map
     ) {
-        var parts = splitOnFirstWhitespace(line);
-        var date = parts[0].substring(1);
-        var topics = map.computeIfAbsent(
-            date,
-            (key) -> new ArrayList<String>()
+        var entries = map.computeIfAbsent(
+            entry.date(),
+            (key) -> new ArrayList<JournalEntry>()
         );
-        topics.add(parts[1]);
+        entries.add(entry);
     }
 
     private static void printWorkingHours(
         String date,
-        List<String> topics
+        List<JournalEntry> journalEntries
     ) {
-        Collections.sort(topics);
+        journalEntries.sort(comparing(JournalEntry::time));
         var active = false;
         var numMinutes = 0L;
         LocalTime start = null;
         var withPause = false;
-        for (var topic: topics) {
-            var parts = splitOnFirstWhitespace(topic);
-            var action = parts[1].toLowerCase();
-            var time = LocalTime.parse(
-                removeLastChar(parts[0]));
+        for (var journalEntry: journalEntries) {
+            var activity = journalEntry.activity().toLowerCase();
             if (active) {
-                var pause = action.startsWith("lunch") || action.startsWith("pause");
+                var pause = activity.startsWith("lunch") || activity.startsWith("pause");
                 withPause |= pause;
-                if (action.startsWith("feierabend") || pause) {
+                if (activity.startsWith("feierabend") || pause) {
                     active = false;
-                    numMinutes += start.until(time, MINUTES);
+                    numMinutes += start.until(journalEntry.time(), MINUTES);
                 }
             } else {
                 active = true;
-                start = time;
+                start = journalEntry.time();
             }
         }
         if (active) {
@@ -86,17 +83,37 @@ public class WorkingHours {
         );
     }
 
-    private static String[] splitOnFirstWhitespace(String text) {
-        var indexWhitespace = text.indexOf(' ');
-        return new String[] {
-            text.substring(0, indexWhitespace),
-            text.substring(indexWhitespace + 1)
-        };
-    }
+    static record JournalEntry (
+        String date,
+        LocalTime time,
+        String activity
+    ) {
+        static JournalEntry parse(
+            String line
+        ) {
+            var dateAndRest = splitOnFirstWhitespace(line);
+            var date = dateAndRest[0].substring(1);
+            var timeAndActivity = splitOnFirstWhitespace(dateAndRest[1]);
+            var time = LocalTime.parse(
+                removeLastChar(timeAndActivity[0]));
+            var activity = timeAndActivity[1];
+            return new JournalEntry(date, time, activity);
+        }
 
-    private static String removeLastChar(String text) {
-        return text.substring(
-            0,
-            text.length() - 1);
+        private static String[] splitOnFirstWhitespace(
+            String text
+        ) {
+            var indexWhitespace = text.indexOf(' ');
+            return new String[] {
+                text.substring(0, indexWhitespace),
+                text.substring(indexWhitespace + 1)
+            };
+        }
+
+        private static String removeLastChar(String text) {
+            return text.substring(
+                0,
+                text.length() - 1);
+        }
     }
 }
