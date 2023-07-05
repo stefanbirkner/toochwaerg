@@ -7,24 +7,29 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.LocalTime.now;
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.groupingBy;
 
 public class WorkingHours {
     public static void main(
         String... args
     ) throws Exception {
-        var byDate = new TreeMap<String, List<JournalEntry>>();
+        readJournalByDate()
+            .entrySet()
+            .stream()
+            .forEach(entry -> printWorkingHours(entry.getKey(), entry.getValue()));
+    }
+
+    private static Map<String, List<JournalEntry>> readJournalByDate(
+    ) throws IOException {
         try (
             var reader = new InputStreamReader(System.in, UTF_8);
         ) {
-            new BufferedReader(reader)
+            return new BufferedReader(reader)
                 .lines()
                 .filter(WorkingHours::isTopicLine)
                 .map(JournalEntry::parse)
-                .forEach(line -> collect(line, byDate));
+                .collect(groupingBy(JournalEntry::date));
         }
-        byDate.entrySet()
-            .stream()
-            .forEach(entry -> printWorkingHours(entry.getKey(), entry.getValue()));
     }
 
     private static boolean isTopicLine(
@@ -34,17 +39,6 @@ public class WorkingHours {
             "\\[(\\d{4}-\\d{2}-\\d{2}) (\\d{2}:\\d{2})\\] (.*)",
             line
         );
-    }
-
-    private static void collect(
-        JournalEntry entry,
-        Map<String, List<JournalEntry>> map
-    ) {
-        var entries = map.computeIfAbsent(
-            entry.date(),
-            (key) -> new ArrayList<JournalEntry>()
-        );
-        entries.add(entry);
     }
 
     private static void printWorkingHours(
