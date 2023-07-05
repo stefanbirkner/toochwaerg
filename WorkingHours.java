@@ -14,9 +14,7 @@ public class WorkingHours {
         String... args
     ) throws Exception {
         readJournalByDate()
-            .entrySet()
-            .stream()
-            .forEach(entry -> printWorkingHours(entry.getKey(), entry.getValue()));
+            .forEach(WorkingHours::printWorkingHours);
     }
 
     private static Map<String, List<JournalEntry>> readJournalByDate(
