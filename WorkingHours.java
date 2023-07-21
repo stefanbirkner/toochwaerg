@@ -7,6 +7,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.LocalTime.now;
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.groupingBy;
 
 public class WorkingHours {
@@ -43,35 +44,31 @@ public class WorkingHours {
         String date,
         List<JournalEntry> journalEntries
     ) {
-        journalEntries.sort(comparing(JournalEntry::time));
-        var active = false;
-        var numMinutes = 0L;
-        LocalTime start = null;
-        var withPause = false;
-        for (var journalEntry: journalEntries) {
-            var activity = journalEntry.activity().toLowerCase();
-            if (active) {
-                var pause = activity.startsWith("lunch") || activity.startsWith("pause");
-                withPause |= pause;
-                if (activity.startsWith("feierabend") || pause) {
-                    active = false;
-                    numMinutes += start.until(journalEntry.time(), MINUTES);
-                }
-            } else {
-                active = true;
-                start = journalEntry.time();
-            }
-        }
-        if (active) {
-            numMinutes += start.until(now(), MINUTES);
-        }
-        var duration = Duration.ofMinutes(numMinutes);
+        var dailyAccounting = sumJournalEntries(date, journalEntries);
+        printWorkingHours(dailyAccounting);
+    }
+
+    private static DailyAccounting sumJournalEntries(
+        String date,
+        List<JournalEntry> journalEntries
+    ) {
+        var dailyAccounting = new DailyAccounting(date);
+        journalEntries.stream()
+            .sorted(comparing(JournalEntry::time))
+            .forEach(dailyAccounting::add);
+        return dailyAccounting;
+    }
+
+    private static void printWorkingHours(
+        DailyAccounting dailyAccounting
+    ) {
+        var duration = dailyAccounting.getWorkingTime();
         System.out.printf(
             "%s %02d:%02d %s%n",
-            date,
+            dailyAccounting.date,
             duration.toHours(),
             duration.toMinutesPart(),
-            withPause ? "" : "no pause"
+            dailyAccounting.pauseRegistered ? "" : "no pause"
         );
     }
 
@@ -106,6 +103,64 @@ public class WorkingHours {
             return text.substring(
                 0,
                 text.length() - 1);
+        }
+    }
+
+    static class DailyAccounting {
+        final String date;
+        boolean active;
+        boolean endOfDayRegistered;
+        long numMinutesWorked;
+        boolean pauseRegistered;
+        LocalTime startOfLastActivePhase;
+
+        DailyAccounting(
+            String date
+        ) {
+            this.date = requireNonNull(date, "The date is missing.");
+        }
+
+        void add(
+            JournalEntry journalEntry
+        ) {
+            var activity = journalEntry.activity().trim().toLowerCase();
+            switch (activity) {
+                case "feierabend":
+                    setInactive(journalEntry.time);
+                    endOfDayRegistered = true;
+                    break;
+                case "lunch":
+                case "pause":
+                    setInactive(journalEntry.time);
+                    pauseRegistered = true;
+                    break;
+                default:
+                    setActive(journalEntry.time);
+            }
+        }
+
+        Duration getWorkingTime() {
+            if (active)
+                return Duration.ofMinutes(
+                    numMinutesWorked + startOfLastActivePhase.until(now(), MINUTES));
+            else
+                return Duration.ofMinutes(numMinutesWorked);
+        }
+
+        private void setActive(
+            LocalTime time
+        ) {
+            if (!active)
+                startOfLastActivePhase = time;
+            active = true;
+        }
+
+        private void setInactive(
+            LocalTime time
+        ) {
+            if (active)
+                numMinutesWorked += startOfLastActivePhase.until(time, MINUTES);
+            active = false;
         }
     }
 }
