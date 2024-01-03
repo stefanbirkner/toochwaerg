@@ -1,0 +1,8 @@
+[package]
+name = "toochwaerg"
+version = "1.0.0"
+edition = "2021"
+
+[dev-dependencies]
+assert_cmd = "2.0.12"
+

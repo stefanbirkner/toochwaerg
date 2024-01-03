@@ -1,7 +1,10 @@
 # Toochwaerg
 
-A bunch of scripts for analyzing a work log that is created with
-[jrnl](http://jrnl.sh/).
+A command-line too for analyzing a work log that is created with
+[jrnl](http://jrnl.sh/). It calculates
+- your overtime
+- the time you worked on each task
+- the time you worked on a topic
 
 Toochwaerg is published under the
 [MIT license](http://opensource.org/licenses/MIT).
@@ -16,6 +19,13 @@ You need to have a JDK (at least JDK 10) installed. Also you need to have jrnl
 installed.
 
 ## Usage
+
+Toochwaerg follows the
+[Unix philosophy](https://en.wikipedia.org/wiki/Unix_philosophy). It takes the
+output of jrnl.sh and does its computations on top of it.
+
+    jrnl <any options> | toochwaerg <command>
+
 
 ### Calculate hours worked
 
